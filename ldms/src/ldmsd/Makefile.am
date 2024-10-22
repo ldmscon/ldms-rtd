@@ -49,7 +49,7 @@ ldmsd_LDADD = ../core/libldms.la libldmsd_request.la libldmsd_stream.la \
 	$(LZAP) $(LMMALLOC) $(LOVIS_UTIL) $(LCOLL) $(LJSON_UTIL) $(LTLIBJANSSON) \
 	$(LOVIS_EVENT) $(LOVIS_EV) -lpthread $(LOVIS_CTRL) -lm -ldl
 ldmsd_CFLAGS = $(AM_CFLAGS)
-ldmsd_LDFLAGS = $(AM_LDFLAGS) -rdynamic -pthread
+ldmsd_LDFLAGS = $(AM_LDFLAGS)  @SOS_LIBDIR_FLAG@ @SOS_LIB64DIR_FLAG@ $(STORE_LIBADD) -lsos -rdynamic -pthread
 
 if ENABLE_RABBITV3
 ldmsd_LDADD += -lrabbitmq

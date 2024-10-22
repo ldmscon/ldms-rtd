@@ -1625,7 +1625,10 @@ commit_rows(ldmsd_strgp_t strgp, ldms_set_t set, ldmsd_row_list_t row_list, int 
 			rc = errno;
 			goto out;
 		}
+	} else {
+		// (void)sos_container_stats(si->sos_handle->sos, 0);
 	}
+
 	if (timeout > 0) {
 		struct timespec now;
 		clock_gettime(CLOCK_REALTIME, &now);

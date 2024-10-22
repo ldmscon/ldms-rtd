@@ -310,6 +310,7 @@ struct client {
 #define CONNECTED	2
 #define ACKED		3
 #define DISCONNECTED	4
+#define ERROR		5
 
 static void event_cb(ldms_t x, ldms_xprt_event_t e, void *cb_arg)
 {
@@ -490,27 +491,27 @@ static int send_event(int argc, char *argv[], jbuf_t jb)
 		client->ldms =
 			ldms_xprt_new_with_auth(client->xprt,
 						msglog, client->auth, NULL);
+		client->state = IDLE;
 		if (!client->ldms) {
 			DEBUG2("ERROR %d creating the '%s' transport\n",
 				     errno, client->xprt);
-			continue;
 		}
-		client->state = IDLE;
 	}
 	if (LIST_EMPTY(&client_list))
-		return ENOTCONN;
+		return 0;
 
 	pthread_mutex_lock(&exit_lock);
 	/* Attempt to connect to each client */
 	LIST_FOREACH(client, &client_list, entry) {
 		client->state = CONNECTING;
-		assert(client->ldms);
-		rc = ldms_xprt_connect_by_name(client->ldms, client->host,
-					       client->port, event_cb, client);
-		if (rc) {
-			DEBUG2("Synchronous ERROR %d connecting to %s:%s\n",
-				rc, client->host, client->port);
-			LIST_INSERT_HEAD(&delete_list, client, delete);
+		if (client->ldms) {
+			rc = ldms_xprt_connect_by_name(client->ldms, client->host,
+						       client->port, event_cb, client);
+			if (rc) {
+				DEBUG2("Synchronous ERROR %d connecting to %s:%s\n",
+					rc, client->host, client->port);
+				LIST_INSERT_HEAD(&delete_list, client, delete);
+			}
 		}
 	}
 	rc = purge(&client_list, &delete_list);

@@ -591,13 +591,20 @@ int ldmsd_logrotate() {
 	return 0;
 }
 
-void cleanup_sa(int signal, siginfo_t *info, void *arg)
+static void cleanup_sa(int signal, siginfo_t *info, void *arg)
 {
 	ldmsd_log(LDMSD_LINFO, "signo : %d\n", info->si_signo);
 	ldmsd_log(LDMSD_LINFO, "si_pid: %d\n", info->si_pid);
 	cleanup(0, "signal to exit caught");
 }
 
+static void store_status(int signal, siginfo_t *info, void *arg)
+{
+	extern char *sos_container_stats(void *sos, uint64_t mask);
+	char *json = sos_container_stats(NULL, 0);
+	if (json)
+		printf(json);
+}
 
 void usage_hint(char *argv[],char *hint)
 {
@@ -2165,7 +2172,10 @@ int main(int argc, char *argv[])
 	int op, op_idx;
 	log_fp = stdout;
 	struct sigaction action;
+	struct sigaction action2;
 	sigset_t sigset;
+	int rc;
+
 	sigemptyset(&sigset);
 	sigaddset(&sigset, SIGUSR1);
 
@@ -2174,9 +2184,17 @@ int main(int argc, char *argv[])
 	action.sa_flags = SA_SIGINFO;
 	action.sa_mask = sigset;
 
-	sigaction(SIGHUP, &action, NULL);
-	sigaction(SIGINT, &action, NULL);
-	sigaction(SIGTERM, &action, NULL);
+	memset(&action2, 0, sizeof(action2));
+	sigemptyset(&action2.sa_mask);
+	action2.sa_sigaction = store_status;
+	action2.sa_flags = SA_SIGINFO;
+	rc = sigaction(SIGUSR2, &action2, NULL);
+	printf("rc = %d\n", rc);
+
+	rc = sigaction(SIGHUP, &action, NULL);
+	rc = sigaction(SIGINT, &action, NULL);
+	rc = sigaction(SIGTERM, &action, NULL);
+	printf("rc = %d\n", rc);
 
 	sigaddset(&sigset, SIGHUP);
 	sigaddset(&sigset, SIGINT);
