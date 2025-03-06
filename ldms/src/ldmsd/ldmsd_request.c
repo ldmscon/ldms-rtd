@@ -8575,6 +8575,8 @@ __store_time_stats_strgp(json_entity_t strgp_dict, ldmsd_strgp_t strgp, int rese
 		for (rbn = rbt_min(&prdcr->set_tree); rbn; rbn = rbn_succ(rbn)) {
 
 			prdset = container_of(rbn, struct ldmsd_prdcr_set, rbn);
+			if (!prdset->set)
+				continue;
 			if (strgp->schema) {
 				if (0 != strcmp(strgp->schema, prdset->schema_name))
 					continue;
@@ -8677,7 +8679,7 @@ static int store_time_stats_handler(ldmsd_req_ctxt_t reqc)
 
 	reset_s = ldmsd_req_attr_str_value_get_by_id(reqc, LDMSD_ATTR_RESET);
 	if (reset_s) {
-		if (0 != strcasecmp(reset_s, "false"))
+		if (0 == strcasecmp(reset_s, "true"))
 			reset = 1;
 		free(reset_s);
 	}
