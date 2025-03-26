@@ -7261,6 +7261,7 @@ out:
 extern void ldmsd_worker_thrstat_free(struct ldmsd_worker_thrstat_result *res);
 extern struct ldmsd_worker_thrstat_result *ldmsd_worker_thrstat_get();
 extern struct ldmsd_worker_thrstat_result *ldmsd_xthrstat_get();
+extern struct ldmsd_worker_thrstat_result *ldmsd_storage_worker_thrstat_get();
 static char * __thread_stats_as_json(size_t *json_sz)
 {
 	char *buff, *s;
@@ -7280,6 +7281,7 @@ static char * __thread_stats_as_json(size_t *json_sz)
 	struct store_time_thread *stime_ent;
 	struct ldmsd_worker_thrstat_result *wres = NULL;
 	struct ldmsd_worker_thrstat_result *xres = NULL;
+	struct ldmsd_worker_thrstat_result *sres = NULL; /* storage workers */
 	struct ovis_scheduler_thrstat *wthr;
 	s = buff = NULL;
 
@@ -7301,6 +7303,10 @@ static char * __thread_stats_as_json(size_t *json_sz)
 
 	xres = ldmsd_xthrstat_get();
 	if (!xres && errno != ENOENT)
+		goto __APPEND_ERR;
+
+	sres = ldmsd_storage_worker_thrstat_get();
+	if (!sres && errno != ENOENT)
 		goto __APPEND_ERR;
 
 	buff = malloc(sz);
@@ -7355,7 +7361,7 @@ static char * __thread_stats_as_json(size_t *json_sz)
 		else
 			__APPEND("  }\n");
 	}
-	__APPEND(" ],\n"); /* end of entries array */
+	__APPEND(" ],\n"); /* end of io_thread array */
 	__APPEND(" \"worker_threads\": [\n");
 	for (i = 0; i < wres->count; i++) {
 		wthr = wres->entries[i];
@@ -7389,7 +7395,24 @@ static char * __thread_stats_as_json(size_t *json_sz)
 		else
 			__APPEND("   }\n");
 	}
-	__APPEND(" ],\n"); /* end of worker threads */
+	__APPEND(" ],\n"); /* end of xthreads threads */
+	__APPEND(" \"storage threads\": [\n");
+	for (i = 0; sres && i < sres->count; i++) {
+		wthr = sres->entries[i];
+		__APPEND("  {\n");
+		__APPEND("   \"name\": \"%s\",\n", wthr->name);
+		__APPEND("   \"tid\": %d,\n", wthr->tid);
+		__APPEND("   \"thread_id\": \"%p\",\n", (void*)wthr->thread_id);
+		__APPEND("   \"idle_pc\" : %lf,\n", wthr->idle_pc);
+		__APPEND("   \"active_pc\" : %lf,\n", wthr->active_pc);
+		__APPEND("   \"total_us\" : %ld,\n", wthr->dur);
+		__APPEND("   \"ev_cnt\" : %ld\n", wthr->ev_cnt);
+		if (i < sres->count - 1)
+			__APPEND("   },\n");
+		else
+			__APPEND("   }\n");
+	}
+	__APPEND(" ],\n"); /* end of storage threads threads */
 	(void)clock_gettime(CLOCK_REALTIME, &end);
 	uint64_t compute_time = ldms_timespec_diff_us(&start, &end);
 
