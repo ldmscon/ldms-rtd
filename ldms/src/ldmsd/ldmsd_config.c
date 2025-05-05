@@ -328,6 +328,10 @@ void ldmsd_sampler___del(ldmsd_cfgobj_t obj)
 void ldmsd_store___del(ldmsd_cfgobj_t obj)
 {
 	ldmsd_cfgobj_store_t store = (void*)obj;
+	if (store->api->base.destructor)
+		store->api->base.destructor(obj);
+	else if (store->api->base.term)
+		store->api->base.term(obj);
 	free((char *)store->libpath);
 	ldmsd_cfgobj___del(obj);
 }
