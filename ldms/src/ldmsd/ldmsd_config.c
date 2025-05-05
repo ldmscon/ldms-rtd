@@ -358,14 +358,12 @@ int ldmsd_load_plugin(char* cfg_name, char *plugin_name,
 	if (!api)
 		return errno;
 	if (0 == (api->flags & LDMSD_PLUGIN_MULTI_INSTANCE)) {
-		if (cfg_name && plugin_name) {
-			if (strcmp(cfg_name, plugin_name)) {
-				ovis_log(config_log, OVIS_LERROR,
-					 "Plugin %s does not support multiple "
-					 "configurations, but the name specified "
-					 "was %s.\n", plugin_name, cfg_name);
-				goto err;
-			}
+		if (strcmp(cfg_name, plugin_name)) {
+			ovis_log(config_log, OVIS_LERROR,
+				 "Plugin %s does not support multiple "
+				 "configurations, but the name specified "
+				 "was %s.\n", plugin_name, cfg_name);
+			goto err;
 		}
 	}
 	switch (api->type) {
