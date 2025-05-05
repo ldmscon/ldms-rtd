@@ -317,11 +317,11 @@ int ldmsd_compile_regex(regex_t *regex, const char *regex_str,
 void ldmsd_sampler___del(ldmsd_cfgobj_t obj)
 {
 	ldmsd_cfgobj_sampler_t samp = (void*)obj;
-	free((char *)samp->libpath);
 	if (samp->api->base.destructor)
 		samp->api->base.destructor(obj);
 	else if (samp->api->base.term)
 		samp->api->base.term(obj);
+	free((char *)samp->libpath);
 	ldmsd_cfgobj___del(obj);
 }
 
