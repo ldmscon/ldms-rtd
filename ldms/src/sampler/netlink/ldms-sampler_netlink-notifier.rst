@@ -4,7 +4,6 @@
 netlink-notifier
 ================
 
-
 ---------------------------------------------------------------------
 Transmit Linux kernel netlink process life messages to ldmsd streams.
 ---------------------------------------------------------------------
@@ -15,6 +14,8 @@ Transmit Linux kernel netlink process life messages to ldmsd streams.
 
 
 ldms-notify - systemd service
+
+.. _netlink-notifier-synopsis
 
 SYNOPSIS
 ========
