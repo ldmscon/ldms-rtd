@@ -209,10 +209,7 @@ ldmsd_sampler_add(const char *cfg_name,
 	sampler->api = api;
 	sampler->libpath = strdup(libpath);
 	sampler->thread_id = -1; /* stopped */
-	if (sampler->api->base.constructor != NULL
-		&& sampler->api->base.destructor != NULL)
-	{
-		/* This plugin is multi-instance capable */
+	if (sampler->api->base.constructor != NULL) {
 		rc = sampler->api->base.constructor(&sampler->cfg);
 		if (rc)
 			goto err;
@@ -254,10 +251,7 @@ ldmsd_store_add(const char *cfg_name,
 	store->log = ovis_log_register(log_name, "Store plugin log file.");
 	store->api = api;
 	store->libpath = strdup(libpath);
-	if (store->api->base.constructor != NULL
-		&& store->api->base.destructor != NULL)
-	{
-		/* This plugin is multi-instance capable */
+	if (store->api->base.constructor != NULL) {
 		rc = store->api->base.constructor(&store->cfg);
 		if (rc)
 			goto err;
@@ -323,17 +317,21 @@ int ldmsd_compile_regex(regex_t *regex, const char *regex_str,
 void ldmsd_sampler___del(ldmsd_cfgobj_t obj)
 {
 	ldmsd_cfgobj_sampler_t samp = (void*)obj;
-	free((char *)samp->libpath);
 	if (samp->api->base.destructor)
 		samp->api->base.destructor(obj);
 	else if (samp->api->base.term)
 		samp->api->base.term(obj);
+	free((char *)samp->libpath);
 	ldmsd_cfgobj___del(obj);
 }
 
 void ldmsd_store___del(ldmsd_cfgobj_t obj)
 {
 	ldmsd_cfgobj_store_t store = (void*)obj;
+	if (store->api->base.destructor)
+		store->api->base.destructor(obj);
+	else if (store->api->base.term)
+		store->api->base.term(obj);
 	free((char *)store->libpath);
 	ldmsd_cfgobj___del(obj);
 }
@@ -360,14 +358,12 @@ int ldmsd_load_plugin(char* cfg_name, char *plugin_name,
 	if (!api)
 		return errno;
 	if (0 == (api->flags & LDMSD_PLUGIN_MULTI_INSTANCE)) {
-		if (cfg_name && plugin_name) {
-			if (strcmp(cfg_name, plugin_name)) {
-				ovis_log(config_log, OVIS_LERROR,
-					 "Plugin %s does not support multiple "
-					 "configurations, but the name specified "
-					 "was %s.\n", plugin_name, cfg_name);
-				goto err;
-			}
+		if (strcmp(cfg_name, plugin_name)) {
+			ovis_log(config_log, OVIS_LERROR,
+				 "Plugin %s does not support multiple "
+				 "configurations, but the name specified "
+				 "was %s.\n", plugin_name, cfg_name);
+			goto err;
 		}
 	}
 	switch (api->type) {
