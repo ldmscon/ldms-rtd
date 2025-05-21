@@ -1,3 +1,5 @@
+.. _ldms-quick-start:
+
 LDMS Quick Start
 ###########################
 

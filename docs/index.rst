@@ -20,39 +20,10 @@ LDMS is a lightweight framework for collecting, aggregating, and transporting sy
 
 .. toctree::
    :maxdepth: 3
-   :caption: Introduction To LDMS
+   :caption: LDMSCON RTD Tutorial
 
-   intro/quick-start
-
-.. toctree::
-   :maxdepth: 3
-   :caption: LDMS Streams
-
-   streams/ldms-streams-apps
-
-.. toctree::
-   :maxdepth: 3
-   :caption: ASF
-
-   asf/index
-
-.. toctree::
-   :maxdepth: 3
-   :caption: Deployment
-
-   deployment/index
-
-.. toctree::
-   :maxdepth: 3
-   :caption: Man Pages
-
-   rst_man/index
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Contributing to LDMS
-
-   contributing/index
+   exercises/index
+   results/index
 
 To join the LDMS Users Group Mailing List: https://github.com/ovis-hpc/ovis-wiki/wiki/Mailing-Lists
 
