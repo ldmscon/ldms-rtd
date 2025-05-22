@@ -1,8 +1,8 @@
 /* -*- c-basic-offset: 8 -*-
- * Copyright (c) 2018,2023 National Technology & Engineering Solutions
+ * Copyright (c) 2018,2023,2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * Copyright (c) 2018,2023 Open Grid Computing, Inc. All rights reserved.
+ * Copyright (c) 2018,2023,2025 Open Grid Computing, Inc. All rights reserved.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -68,6 +68,7 @@
 #include "ldms.h"
 #include "ldmsd.h"
 #include "ldmsd_plug_api.h"
+#include "ldmsd_stream.h"
 
 static ovis_log_t mylog;
 static char *plugin_config_name;
@@ -205,7 +206,7 @@ static sos_visit_action_t add_digest_cb(sos_index_t index,
 	return SOS_VISIT_NOP;
 }
 
-int add_digest(kokkos_context_t k, json_entity_t e, char *digest)
+int add_digest(kokkos_context_t k, json_entity_t e, unsigned char *digest)
 {
 	struct visit_cb_ctxt ctxt;
 	SOS_KEY(key);
@@ -232,10 +233,10 @@ static int process_job_tag(kokkos_context_t k, json_entity_t e, sos_obj_t obj, s
 	sos_value_data_t data;
 
 	/* Compute the hash and save it in the parser */
-	SHA256((unsigned char *)e->value.str_->str, e->value.str_->str_len, k->job_tag);
+	SHA256((unsigned char*)e->value.str_->str, e->value.str_->str_len, k->job_tag);
 
 	/* Add the digest->string map */
-	add_digest(k, e, (char*)k->job_tag);
+	add_digest(k, e, k->job_tag);
 
 	/* Add the object digest attribute */
 	data = sos_obj_attr_data(obj, attr, NULL);
@@ -247,10 +248,10 @@ static int process_job_tag(kokkos_context_t k, json_entity_t e, sos_obj_t obj, s
 static int process_digest(kokkos_context_t k, json_entity_t e, sos_obj_t obj, sos_attr_t attr)
 {
 	sos_value_data_t data;
-	char digest[SHA256_DIGEST_LENGTH];
+	unsigned char digest[SHA256_DIGEST_LENGTH];
 
 	/* Compute the hash and save it in the parser */
-	SHA256((unsigned char*)e->value.str_->str, e->value.str_->str_len, (uint8_t*)digest);
+	SHA256((unsigned char*)e->value.str_->str, e->value.str_->str_len, digest);
 
 	/* Add the digest->string map */
 	add_digest(k, e, digest);
@@ -860,7 +861,10 @@ static int cmp_json_name(const void *a, const void *b, size_t len)
 	return strncmp(a, b, len);
 }
 
-static int slurm_recv_cb(ldms_stream_event_t ev, void *ctxt);
+static int slurm_recv_cb(ldmsd_stream_client_t c, void *ctxt,
+			 ldmsd_stream_type_t stream_type,
+			 const char *msg, size_t msg_len,
+			 json_entity_t entity);
 static int config(ldmsd_plug_handle_t handle, struct attr_value_list *kwl, struct attr_value_list *avl)
 {
 	char *value;
@@ -871,7 +875,7 @@ static int config(ldmsd_plug_handle_t handle, struct attr_value_list *kwl, struc
 		stream = strdup(value);
 	else
 		stream = strdup("kokkos");
-	ldms_stream_subscribe(stream, 0, slurm_recv_cb, handle, "kokkos_store");
+	ldmsd_stream_subscribe(stream, slurm_recv_cb, handle);
 
 	value = av_value(avl, "path");
 	if (!value) {
@@ -885,7 +889,7 @@ static int config(ldmsd_plug_handle_t handle, struct attr_value_list *kwl, struc
 	root_path = strdup(value);
 	if (!root_path) {
 		ovis_log(mylog, OVIS_LERROR,
-		       "%s: Error allocating %d bytes for the container path.\n",
+		       "%s: Error allocating %zd bytes for the container path.\n",
 		       plugin_config_name, strlen(value) + 1);
 		return ENOMEM;
 	}
@@ -932,15 +936,13 @@ static int config(ldmsd_plug_handle_t handle, struct attr_value_list *kwl, struc
 	return rc;
 }
 
-static int slurm_recv_cb(ldms_stream_event_t ev, void *ctxt)
+static int slurm_recv_cb(ldmsd_stream_client_t c, void *ctxt,
+			 ldmsd_stream_type_t stream_type,
+			 const char *msg, size_t msg_len,
+			 json_entity_t entity)
 {
 	json_entity_t list;
 	int rc;
-	json_entity_t entity;
-
-	if (ev->type != LDMS_STREAM_EVENT_RECV)
-		return 0;
-
 	kokkos_context_t k = calloc(1, sizeof *k);
 
 	SHA256_Init(&k->sha_ctxt);
@@ -950,10 +952,10 @@ static int slurm_recv_cb(ldms_stream_event_t ev, void *ctxt)
 		rc = errno;
 		goto out;
 	}
-	rc = process_dict_entity(k, ev->recv.json, NULL, NULL);
+	rc = process_dict_entity(k, entity, NULL, NULL);
 	if (!rc) {
 		ovis_log(mylog, OVIS_LINFO,
-		       "Creating Kokkos App record for %d:%d:%d\n",
+		       "Creating Kokkos App record for %lu:%lu:%lu\n",
 		       k->job_id, k->component_id, k->mpi_rank);
 		sos_obj_index(k->app_obj);
 		sos_obj_put(k->app_obj);
@@ -967,7 +969,7 @@ static int slurm_recv_cb(ldms_stream_event_t ev, void *ctxt)
 			sos_obj_put(k->kernel_obj);
 		}
 	}
-	entity = json_value_find(ev->recv.json, "kokkos-kernel-data");
+	entity = json_value_find(entity, "kokkos-kernel-data");
 	list = json_value_find(entity, "kernel-perf-info");
 	if (!list) {
 		rc = ENOENT;
