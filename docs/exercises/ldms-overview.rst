@@ -1,5 +1,5 @@
-**FIX ME**: Add the appropriate syntax to the following label (ex: ".. _ldmscon-overview_spwalto:")
-ldmscon-overview_<username>
+**FIX ME**: Add the appropriate syntax to the following label (e.g., ".. _ldmscon-overview:")
+ldmscon-overview
 
 LDMSCON & LDMS Overview
 =======================
@@ -29,9 +29,9 @@ Key Concepts
 - **Plugins**: Modular metric collectors that can be configured in `ldmsd` (e.g., `meminfo`).
 - **Transports**: Mechanisms for communication, such as `sock`, `rdma`, or `ugni`.
 
-**FIX ME**: Replace <username> with your email username in the reference below. This label will be created in a later exercise 
+**FIX ME**: make a reference to the example meminfo manpage (e.g. :ref:`description <label>`). This will be configured in a later exercise.   
 
-* Details on how to configure the meminfo sampler can be found at the :ref:`meminfo example man page <meminfo-ex_<username>>`
+* Details on how to configure the meminfo sampler can be found at the  meminfo example man page <meminfo-ex>
 
 Documentation
 ^^^^^^^^^^^^^
@@ -47,11 +47,9 @@ OVIS-HPC leverages Read The Docs to provide centralized and structured documenta
 
 The documentation is organized by project and version, and supports cross-referencing between the main project (OVIS-HPC) and its subcomponents using Sphinxs `intersphinx_mapping`.
 
-**FIX ME**: Update the following to correctly reference the document of the parent project that was cross-referenced in the `intersphinx_mapping` in conf.py: ``:doc:`display name <parent-project:rst-file>``
+**FIX ME**: Update the following to correctly reference the document of the parent project that was cross-referenced in conf.py (:doc:`description <parent-project:rst-file>`)
 
-All subproject documentation is integrated and accessible through the main site:
-
-- doc:OVIS-HPC Documentation Site <ovis-hpc:index>
+All subproject documentation is integrated and accessible through the main site: doc:OVIS-HPC Documentation Site <ovis-hpc:index>
 
 .. _useful_links
 
@@ -59,7 +57,7 @@ Useful Links
 ------------
 
 - :doc:`OVIS-HPC subprojects using intersphinx_mapping <ovis-hpc:projects>`
-- :ref:`Quick Start using reference <ldms-quick-start>`_
-- :doc:`Quick Start using document <../intro/quick-start>`
+- :ref:`Quick Start using :ref: <ldms-quick-start>`_
+- :doc:`Quick Start using :doc: <../intro/quick-start>`
 - `LDMS Source Code using URL <https://github.com/ovis-hpc/ldms>`_
 

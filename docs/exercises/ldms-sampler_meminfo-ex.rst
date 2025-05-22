@@ -1,4 +1,4 @@
-**FIX ME**: Add "meminfo-ex_<username>" label
+**FIX ME**: Add a label called "meminfo-ex"
  
 **FIX ME**: Add the appropriate underline styles: ==== above and below the title, and ----- above and below the description.
 Note: 
@@ -63,15 +63,15 @@ EXAMPLES
 
 Within ldmsd_controller or a configuration file:
 
-**FIX ME**: Make the following a code-block (i.e. "::" or ".. code-block::")
+**FIX ME**: Format the following as a code block using either :: or .. code-block::. Ensure there is a blank line after the directive, and indent the code properly.
 
-   load name=meminfo
-   config name=meminfo producer=vm1_1 instance=vm1_1/meminfo
-   start name=meminfo interval=1000000
+load name=meminfo
+config name=meminfo producer=vm1_1 instance=vm1_1/meminfo
+start name=meminfo interval=1000000
 
 SEE ALSO
 ========
 
-**FIX ME**: fix the syntax of ldmsd and ldms_quickstart references
+**FIX ME**: Fix the syntax of the ldmsd and ldms_quickstart references
 
 ref:`ldmsd(8) ldmsd`, :ref:ldms_quickstart(7) <ldms_quickstart>, :ref:`ldmsd_controller(8) <ldmsd_controller>`, :ref:`ldms_sampler_base(7) <ldms_sampler_base>`
