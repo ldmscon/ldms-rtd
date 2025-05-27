@@ -4,10 +4,10 @@ ldmscon-overview
 LDMSCON & LDMS Overview
 =======================
 
-**FIX ME**: Modify the following section below by updating "align" and "width" sections to "center" and "40%", respectively.
+**FIX ME**: Modify the following section below by updating "align", "width" and "height" sections to "center", "40%", and "30%" respectively.
 
-.. image:: ../images/main-logo.png
-   :alt: LDMS Logo
+.. image:: ../images/ovis-hpc_home.png
+   :alt: OVIS-HPC Logo
    :align: left
    :width: 15%
    :height: 95%
@@ -49,7 +49,7 @@ The documentation is organized by project and version, and supports cross-refere
 
 **FIX ME**: Update the following to correctly reference the document of the parent project that was cross-referenced in conf.py (:doc:`description <parent-project:rst-file>`)
 
-All subproject documentation is integrated and accessible through the main site: doc:OVIS-HPC Documentation Site <ovis-hpc:index>
+All subproject documentation is integrated and accessible through the main site - OVIS-HPC Documentation Site <:>
 
 .. _useful_links
 
