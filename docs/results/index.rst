@@ -5,4 +5,4 @@ RTD Tutorial Results
    :maxdepth: 3
    :caption: RTD Results
 
-   **
+   *

@@ -5,4 +5,4 @@ RTD Tutorial Exercises
    :maxdepth: 3
    :caption: RTD Exercises
 
-   **
+   *
