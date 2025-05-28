@@ -9,7 +9,7 @@ LDMSCON & LDMS Overview
 .. image:: ../images/ovis-hpc_home.png
    :alt: OVIS-HPC Logo
    :align: left
-   :width: 700
+   :width: 950
    :height: 75
 
 Overview
