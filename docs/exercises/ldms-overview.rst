@@ -8,7 +8,7 @@ LDMSCON & LDMS Overview
 
 .. image:: ../images/ovis-hpc_home.png
    :alt: OVIS-HPC Logo
-   :align: left
+   :align: center
    :width: 15%
    :height: 95%
 
@@ -26,8 +26,8 @@ Key Concepts
 
 - **ldmsd**: The LDMS daemon that loads plugins and collects metrics.
 - **LDMSCON**: A console tool to connect to a running ``ldmsd`` instance and interact with it.
-- **Plugins**: Modular metric collectors that can be configured in `ldmsd` (e.g., `meminfo`).
-- **Transports**: Mechanisms for communication, such as `sock`, `rdma`, or `ugni`.
+- **plugins**: Modular metric collectors that can be configured in ``ldmsd`` (e.g., ``meminfo``).
+- **transports**: Mechanisms for communication, such as `sock`, `rdma`, or `ugni`.
 
 **FIX ME**: make a reference to the example meminfo manpage (e.g. :ref:`description <label>`). This will be configured in a later exercise.   
 
@@ -47,9 +47,11 @@ OVIS-HPC leverages Read The Docs to provide centralized and structured documenta
 
 The documentation is organized by project and version, and supports cross-referencing between the main project (OVIS-HPC) and its subcomponents using Sphinxs `intersphinx_mapping`.
 
-**FIX ME**: Update the following to correctly reference the document of the parent project that was cross-referenced in conf.py (:doc:`description <parent-project:rst-file>`)
+All subproject documentation is integrated and accessible through the main site:
 
-All subproject documentation is integrated and accessible through the main site - OVIS-HPC Documentation Site <:>
+**FIX ME**: Update the following to correctly reference the document of the parent project that was cross-referenced in conf.py (e.g. :doc:`description <parent-project:rst-file>`)
+
+- OVIS-HPC Documentation Site <:>
 
 .. _useful_links
 
@@ -57,7 +59,7 @@ Useful Links
 ------------
 
 - :doc:`OVIS-HPC subprojects using intersphinx_mapping <ovis-hpc:projects>`
-- :ref:`Quick Start using :ref: <ldms-quick-start>`_
+- :ref:`Quick Start using :ref: <ldms-quick-start>`
 - :doc:`Quick Start using :doc: <../intro/quick-start>`
 - `LDMS Source Code using URL <https://github.com/ovis-hpc/ldms>`_
 
