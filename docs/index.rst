@@ -8,8 +8,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome To OVIS LDMS Documentation!
-====================================
+Welcome To OVIS-HPC LDMS Documentation!
+=======================================
 .. image:: https://github.com/ovis-hpc/readthedocs/blob/main/images/ovis-logo.png?raw=true
    :target: https://ovis-hpc.readthedocs.io/en/latest/index.html
    :width: 225
@@ -31,7 +31,6 @@ OVIS Subproject Github Repositories
 ====================================
 
 * `ldms <https://github.com/ovis-hpc/ovis>`_
-* `ovis-publications <https://github.com/ovis-hpc/ovis-publications>`_
 * `maestro <https://github.com/ovis-hpc/maestro>`_
 * `sos <https://github.com/ovis-hpc/sos>`_
 * `baler <https://github.com/ovis-hpc/baler>`_
