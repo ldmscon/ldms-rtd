@@ -4,13 +4,13 @@ ldmscon-overview
 LDMSCON & LDMS Overview
 =======================
 
-**FIX ME**: Modify the following section below by updating "align", "width" and "height" sections to "center", "40%", and "30%" respectively.
+**FIX ME**: Modify the following section below by updating "align", "width" and "height" sections to "center", "700", and "150" respectively.
 
 .. image:: ../images/ovis-hpc_home.png
    :alt: OVIS-HPC Logo
-   :align: center
-   :width: 15%
-   :height: 95%
+   :align: left
+   :width: 700
+   :height: 75
 
 Overview
 --------
