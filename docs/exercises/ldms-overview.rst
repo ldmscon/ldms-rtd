@@ -1,12 +1,12 @@
 **FIX ME**: Add the appropriate syntax to the following label (e.g., ".. _ldmscon-overview:")
 ldmscon-overview
 
-LDMSCON & LDMS Overview
-=======================
+LDMSCON2025
+============
 
 **FIX ME**: Modify the following section below by updating "align", "width" and "height" sections to "center", "700", and "150" respectively.
 
-.. image:: ../images/ovis-hpc_home.png
+.. image:: ../images/LDMSCON2025.png
    :alt: OVIS-HPC Logo
    :align: left
    :width: 950
