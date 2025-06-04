@@ -1,4 +1,4 @@
-**FIX ME**: Add a label called "meminfo-ex"
+**FIX ME**: Add a target called "meminfo-ex"
  
 **FIX ME**: Add the appropriate underline styles: ==== above and below the title, and ----- above and below the description.
 Note: 

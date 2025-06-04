@@ -1,4 +1,4 @@
-**FIX ME**: Add the appropriate syntax to the following label (e.g., ".. _ldmscon-overview:")
+**FIX ME**: Add the appropriate syntax to the following target (e.g., ".. _ldmscon-overview:")
 ldmscon-overview
 
 LDMSCON2025
@@ -29,7 +29,7 @@ Key Concepts
 - **plugins**: Modular metric collectors that can be configured in ``ldmsd`` (e.g., ``meminfo``).
 - **transports**: Mechanisms for communication, such as `sock`, `rdma`, or `ugni`.
 
-**FIX ME**: make a reference to the example meminfo manpage (e.g. :ref:`description <label>`). This will be configured in a later exercise.   
+**FIX ME**: make a reference to the example meminfo manpage (e.g. :ref:`description <target>`). This will be configured in a later exercise.   
 
 * Details on how to configure the meminfo sampler can be found at the  meminfo example man page <meminfo-ex>
 
@@ -53,7 +53,7 @@ All subproject documentation is integrated and accessible through the main site:
 
 - OVIS-HPC Documentation Site <:>
 
-.. _useful_links
+.. _useful_links:
 
 Useful Links
 ------------
