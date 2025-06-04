@@ -1,13 +1,13 @@
 .. _ldmscon-overview:
 
-LDMSCON & LDMS Overview
-=======================
+LDMSCON2025
+===========
 
-.. image:: ../images/ovis-hpc_home.png
+.. image:: ../images/LDMSCON2025.png
    :alt: OVIS-HPC Logo
    :align: center
-   :width: 700
-   :height: 150
+   :width: 400
+   :height: 400
 
 Overview
 --------
