@@ -4,7 +4,7 @@ ldmscon-overview
 LDMSCON2025
 ============
 
-**FIX ME**: Modify the following section below by updating "align", "width" and "height" sections to "center", "350", and "350" respectively.
+**FIX ME**: Modify the following section below by updating "align", "width" and "height" sections to "center", "300", and "300" respectively.
 
 .. image:: ../images/LDMSCON2025.png
    :alt: OVIS-HPC Logo
