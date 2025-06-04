@@ -1,5 +1,4 @@
-**FIX ME**: Add the appropriate syntax to the following label (e.g., ".. _ldmscon-overview:")
-ldmscon-overview
+.. _ldmscon-overview:
 
 LDMSCON2025
 ============
