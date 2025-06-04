@@ -16,7 +16,7 @@ Overview
 
 **LDMSCON** is a tool that allows users to interactively inspect and configure `ldmsd` daemons useful for validation and debugging during development.
 
-For more detailed reference material and additional resources, please see the :ref:`useful_links` section below.
+For more detailed reference material and additional resources, please see the `Useful Links`_ section below.
 
 Key Concepts
 ^^^^^^^^^^^^
@@ -46,7 +46,6 @@ All subproject documentation is integrated and accessible through the main site:
 
 - :doc:`OVIS-HPC Documentation Site <ovis-hpc:index>`
 
-.. _useful_links
 
 Useful Links
 ------------
