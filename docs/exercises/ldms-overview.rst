@@ -4,13 +4,11 @@ ldmscon-overview
 LDMSCON2025
 ============
 
-**FIX ME**: Modify the following section below by updating "align", "width" and "height" sections to "center", "300", and "300" respectively.
-
 .. image:: ../images/LDMSCON2025.png
    :alt: OVIS-HPC Logo
-   :align: left
-   :width: 950
-   :height: 75
+   :align: center
+   :width: 300
+   :height: 300
 
 Overview
 --------
@@ -27,11 +25,9 @@ Key Concepts
 - **ldmsd**: The LDMS daemon that loads plugins and collects metrics.
 - **LDMSCON**: A console tool to connect to a running ``ldmsd`` instance and interact with it.
 - **plugins**: Modular metric collectors that can be configured in ``ldmsd`` (e.g., ``meminfo``).
-- **transports**: Mechanisms for communication, such as `sock`, `rdma`, or `ugni`.
+- **transports**: Mechanisms for communication, such as `sock`, `rdma`, or `ugni`. 
 
-**FIX ME**: make a reference to the example meminfo manpage (e.g. :ref:`description <label>`). This will be configured in a later exercise.   
-
-* Details on how to configure the meminfo sampler can be found at the  meminfo example man page <meminfo-ex>
+* Details on how to configure the meminfo sampler can be found at the :ref:`meminfo example man page <meminfo-ex>`
 
 Documentation
 ^^^^^^^^^^^^^
