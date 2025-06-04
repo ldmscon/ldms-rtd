@@ -403,7 +403,7 @@ class YamlCfg(object):
         if 'prdcr_listen' not in spec:
             return
         for pl in spec['prdcr_listen']:
-            check_required(['name', 'reconnect'], pl,
+            check_required(['name'], pl,
                            '"prdcr_listen" entry')
             node_listen = {}
             regex = check_opt('regex', pl)
@@ -412,13 +412,22 @@ class YamlCfg(object):
             rail = check_opt('rail', pl)
             quota = check_opt('quota', pl)
             rx_rate = check_opt('rx_rate', pl)
-            node_listen[pl['name']] = { 'reconnect'     : pl['reconnect'],
+            prdcr_type = check_opt('type', pl)
+            reconnect = check_opt('reconnect', pl)
+            adv_xprt = check_opt('advertiser_xprt', pl)
+            adv_port = check_opt('advertiser_port', pl)
+            adv_auth = check_opt('advertiser_auth', pl)
+            node_listen[pl['name']] = { 'reconnect'     : reconnect,
                                         'disable_start' : dstart,
                                         'ip'            : ip,
                                         'rail'          : rail,
                                         'quota'         : quota,
                                         'rx_rate'       : rx_rate,
-                                        'regex'         : regex
+                                        'regex'         : regex,
+                                        'type'          : prdcr_type,
+                                        'advertiser_xprt': adv_xprt,
+                                        'advertiser_port': adv_port,
+                                        'advertiser_auth': adv_auth
             }
             self.prdcr_listeners[spec['daemons']] = node_listen
 
@@ -712,6 +721,8 @@ class YamlCfg(object):
                 raise ValueError(f'Duplicate plugin name "{plugin_name}". '
                                  f'Plugin must be unique within a group.\n')
             check_plugin_config(plugn, plugn_spec)
+            if 'perm' in plugn_spec[plugn]:
+                plugn_spec[plugn]['perm'] = perm_handler(plugn_spec[plugn]['perm'])
             plugins[plugn] = plugn_spec[plugn]
         return plugins
 
@@ -794,9 +805,26 @@ class YamlCfg(object):
             dstart = check_opt('disable_start', plisten[pl])
             regex = check_opt('regex', plisten[pl])
             ip = check_opt('ip', plisten[pl])
+            quota = check_opt('quota', plisten[pl])
+            rx_rate = check_opt('rx_rate', plisten[pl])
+            prdcr_type = check_opt('type', plisten[pl])
+            adv_xprt = check_opt('advertiser_xprt', plisten[pl])
+            adv_port = check_opt('advertiser_port', plisten[pl])
+            adv_auth = check_opt('advertiser_auth', plisten[pl])
+            rails = check_opt('rails', plisten[pl])
+            reconnect = check_opt('reconnect', plisten[pl])
+
             dstr = self.write_opt_attr(dstr, 'disable_start', dstart)
             dstr = self.write_opt_attr(dstr, 'regex', regex)
-            dstr = self.write_opt_attr(dstr, 'ip', ip, endline=True)
+            dstr = self.write_opt_attr(dstr, 'ip', ip)
+            dstr = self.write_opt_attr(dstr, 'quota', quota)
+            dstr = self.write_opt_attr(dstr, 'rx_rate', rx_rate)
+            dstr = self.write_opt_attr(dstr, 'type', prdcr_type)
+            dstr = self.write_opt_attr(dstr, 'advertiser_xprt', adv_xprt)
+            dstr = self.write_opt_attr(dstr, 'advertiser_port', adv_port)
+            dstr = self.write_opt_attr(dstr, 'advertiser_auth', adv_auth)
+            dstr = self.write_opt_attr(dstr, 'rails', rails)
+            dstr = self.write_opt_attr(dstr, 'reconnect', reconnect, endline=True)
             dstr += f'prdcr_listen_start name={pl}\n'
         return dstr
 
@@ -921,6 +949,7 @@ class YamlCfg(object):
                 for plugin in self.samplers[smplr_grp]['plugins']:
                     plugn = self.plugins[plugin]
                     dstr += f'load name={plugin} plugin={plugn["name"]}\n'
+                    first = True
                     for cfg_ in plugn['config']:
                         if type(cfg_) is dict:
                             hostname = socket.gethostname()
@@ -931,10 +960,12 @@ class YamlCfg(object):
                                 if attr == 'perm':
                                     cfg_[attr] = perm_handler(cfg_[attr])
                                 cfg_args[attr] = cfg_[attr]
-                            if 'producer' not in cfg_args:
-                                cfg_args['producer'] = f'{hostname}'
-                            if 'instance' not in cfg_args:
-                                cfg_args['instance'] = f'{hostname}/{plugin}'
+                            if first:
+                                first = False
+                                if 'producer' not in cfg_args:
+                                    cfg_args['producer'] = f'{sname}'
+                                if 'instance' not in cfg_args:
+                                    cfg_args['instance'] = f'{sname}/{plugin}'
                             cfg_str = parse_to_cfg_str(cfg_args)
                         else:
                             cfg_str = cfg_

@@ -1815,9 +1815,9 @@ class LdmsdCmdParser(cmd.Cmd):
     def __log_level(self, arg):
         arg = self.handle_args('log_level', arg)
         if arg:
-            rc, msg = self.comm.log_level(arg['level'], arg['name'], arg['regex'])
+            rc, msg = self.comm.log_level(arg['level'], arg['name'], arg['regex'], arg['test'])
             if rc:
-                print(f'Error changing log level: {msg}')
+                print(f'Error changing log level to {arg["level"]}: {msg}')
 
     def do_loglevel(self, arg):
         """
@@ -2883,7 +2883,7 @@ class LdmsdCmdParser(cmd.Cmd):
         """
         Add an advertisement of its hostname to an aggregator. This is a part of the sampler discovery feature.
         Parameters:
-                name=      A unique name to be used as producer name on the aggregator
+                name=      Advertiser name
                 xprt=      The transport name [sock, rdma, ugni]
                 host=      The aggregator hostname
                 port=      The aggregator port number
@@ -3010,10 +3010,9 @@ class LdmsdCmdParser(cmd.Cmd):
 
         Parameters:
                 name=              A unique name of the producer listen
-                reconnect=         The retry interval to check for connection establishment of producers matched the regular expression.
-                [disable_start=]  Tell LDMSD not to start the producers
                 [ip=]              An IP masks to filter advertisements using the source IP
                 [regex=]           A regular expression to match sampler hostnames
+                [disable_start=]   Tell LDMSD not to start the producers
             Parameters to Control Advertised Producers:
                 [quota=]           The send quota our ldmsd (the one we are controlling)
                                    advertises to the prdcr (default: value from ldmsd --quota
@@ -3026,6 +3025,8 @@ class LdmsdCmdParser(cmd.Cmd):
               Parameters for Active, Advertised Producers:
                 [advertiser_xprt=] Advertiser transport for active, advertised producer to use
                 [advertiser_port=] Advertiser port for active, advertised producer to connect to
+                [reconnect=]       The retry interval to check for connection establishment of
+                                   producers matched the regular expression.
                 [advertiser_auth=] Autentication domain to be used to connect to the advertiser
                 [rail=]            The number of rail endpoints for the prdcr (default: 1)
         """

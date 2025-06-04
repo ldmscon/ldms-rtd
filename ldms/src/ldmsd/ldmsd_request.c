@@ -2263,7 +2263,12 @@ static int __process_stream_status(struct prdcr_stream_status_ctxt *ctxt, char *
 			json_attr_add(ctxt->base->stream_dict, stream_name, ss);
 		}
 		pthread_mutex_unlock(&ctxt->base->lock);
-		assert(!json_value_find(ss, ctxt->pname->str)); /* Receive stream_dir from this producer twice */
+		if (json_value_find(ss, ctxt->pname->str)) {
+			ovis_log(config_log, OVIS_LINFO, "Duplication prdcr_stream_status responses from " \
+					      "producer '%s'. Only the first response was processed.\n",
+					      ctxt->pname->str);
+			continue;
+		}
 		json_attr_rem(s, "publishers"); /* We need to know only the overall statistic on sampler. */
 		p = json_entity_copy(s);
 		if (!p) {
@@ -2285,15 +2290,25 @@ static int __on_stream_status_resp(ldmsd_req_cmd_t rcmd)
 
 	ldmsd_req_hdr_t resp = (ldmsd_req_hdr_t)(rcmd->reqc->req_buf);
 	ldmsd_req_attr_t attr = ldmsd_first_attr(resp);
-	assert(attr->attr_id == LDMSD_ATTR_JSON);
+	if (attr->attr_id != LDMSD_ATTR_JSON) {
+		ovis_log(config_log, OVIS_LINFO, "Invalid stream_status response from producer '%s': " \
+				      "attribute field must be JSON. Failed to parse.\n",
+				                                      ctxt->pname->str);
+		goto remove_ctxt;
+	}
 	rc = __process_stream_status(ctxt, (char*)attr->attr_value, attr->attr_len);
+remove_ctxt:
+	pthread_mutex_lock(&base->lock);
 	TAILQ_REMOVE(&base->prdcr_list, ctxt->pname, entry);
 	free(ctxt->pname->str);
 	free(ctxt->pname);
 	free(ctxt);
 
-	if (!TAILQ_EMPTY(&base->prdcr_list))
+	if (!TAILQ_EMPTY(&base->prdcr_list)) {
+		pthread_mutex_unlock(&base->lock);
 		goto out;
+	}
+	pthread_mutex_unlock(&base->lock);
 
 	/*
 	 * We have received all responses.
@@ -2313,6 +2328,7 @@ static int __on_stream_status_resp(ldmsd_req_cmd_t rcmd)
 	ldmsd_append_reply(rcmd->org_reqc, (char*)&(discrim),
 				sizeof(discrim), LDMSD_REQ_EOM_F);
 	json_entity_free(base->stream_dict);
+	pthread_mutex_destroy(&base->lock);
 	free(base);
 out:
 	return rc;
@@ -2426,7 +2442,9 @@ int prdcr_stream_status_handler(ldmsd_req_ctxt_t reqc)
 			/* Failed to forward the request.
 			 * Remove the producer name from the list
 			 */
+			pthread_mutex_lock(&ctxt->lock);
 			TAILQ_REMOVE(&ctxt->prdcr_list, pname, entry);
+			pthread_mutex_unlock(&ctxt->lock);
 			free(pname->str);
 			free(pname);
 		}
@@ -5074,18 +5092,14 @@ out:
 
 static char *plugin_type_str(enum ldmsd_plugin_type type)
 {
-	static char *type_str[] = {
-		[LDMSD_PLUGIN_OTHER] = "other",
-		[LDMSD_PLUGIN_SAMPLER] = "sampler",
-		[LDMSD_PLUGIN_STORE] = "store",
-		[LDMSD_PLUGIN_AUTH] = "auth",
-		[LDMSD_PLUGIN_DECOMP] = "decomp"
-
-	};
-
-	if (type <= sizeof(type_str) / sizeof(type_str[0]))
-		return type_str[type];
-	return "unknown";
+        switch (type) {
+        case LDMSD_PLUGIN_SAMPLER:
+                return "sampler";
+        case LDMSD_PLUGIN_STORE:
+                return "store";
+        default:
+                return "unknown";
+        }
 }
 
 extern int ldmsd_load_plugin(char *instance_name, char *plugin_name, char *errstr, size_t errlen);
@@ -9930,6 +9944,17 @@ static int prdcr_listen_add_handler(ldmsd_req_ctxt_t reqc)
 						"is invalid.", cidr_str);
 			goto err;
 		}
+	}
+
+	if (quota) {
+		pl->quota = ovis_get_mem_size(quota);
+		if (!pl->quota) {
+			reqc->errcode = EINVAL;
+			reqc->line_off = snprintf(reqc->line_buf, reqc->line_len,
+						  "The given quota '%s' "
+						  "is invalid.", quota);
+			goto err;
+		}
 	} else {
 		pl->quota = 0; /* 0 means inherit quota from the listen xprt */
 	}
@@ -10458,11 +10483,14 @@ ldmsd_prdcr_t __advertised_prdcr_new(ldmsd_req_ctxt_t reqc, ldmsd_prdcr_listen_t
 					    rc, advtr_name, adv_hostname);
 		goto err;
 	}
-	if (pl->quota) {
-		ldms_xprt_rail_recv_quota_set(x, pl->quota);
-	}
-	if (pl->rx_rate) {
-		ldms_xprt_rail_recv_rate_limit_set(x, pl->rx_rate);
+
+	if (prdcr->type == LDMSD_PRDCR_TYPE_ADVERTISED_PASSIVE) {
+		if (pl->quota) {
+			ldms_xprt_rail_recv_quota_set(x, pl->quota);
+		}
+		if (pl->rx_rate) {
+			ldms_xprt_rail_recv_rate_limit_set(x, pl->rx_rate);
+		}
 	}
 	ldms_xprt_put(x, "advertised_prdcr"); /* Put back the reference at the beginning of the funciton */
 	return prdcr;
@@ -10631,6 +10659,12 @@ static int __process_advertisement(ldmsd_req_ctxt_t reqc, ldmsd_prdcr_listen_t p
 			goto enomem;
 		}
 		rbt_ins(&pl->prdcr_tree, &pl_pref->rbn);
+
+		if (prdcr->type == LDMSD_PRDCR_TYPE_ADVERTISED_PASSIVE) {
+			prdcr->xprt = ldms_xprt_get(x, "prdcr");
+			ldms_xprt_event_cb_set(prdcr->xprt, prdcr_connect_cb, prdcr);
+			prdcr->conn_state = LDMSD_PRDCR_STATE_STANDBY;
+		}
 	}
 	/* Add the producer to any updaters that the producer matches */
 	ldmsd_updtr_t updtr;

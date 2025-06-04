@@ -95,7 +95,6 @@
 #define LDMSD_AUTH_ENV "LDMS_AUTH_FILE"
 
 #define LDMSD_SETFILE "/proc/sys/kldms/set_list"
-#define OVIS_LOGFILE "/var/log/ldmsd.log"
 
 const char *short_opts = "B:l:s:x:P:m:Fkr:v:Vc:u:a:A:n:L:C:y:";
 
@@ -333,7 +332,7 @@ void usage(char *argv[])
 {
 	printf("%s: [%s]\n", argv[0], short_opts);
 	printf("  General Options\n");
-	printf("    -u name                                       List named plugin if available, and where possible\n");
+	printf("    -n name                                       List named plugin if available, and where possible\n");
 	printf("                                                  its usage, then exit. Name all, sampler, and store limit output.\n");
 	printf("    -m SIZE,     --set_memory SIZE                Maximum size of pre-allocated memory for metric sets.\n"
 	       "                                                  The given size must be less than 1 petabytes.\n"
@@ -345,8 +344,7 @@ void usage(char *argv[])
 	                                                          LDMSD_MEM_SIZE_STR, LDMSD_MEM_SIZE_ENV);
 	printf("    -r PATH,     --pid_file PATH                  The path to a pid file.\n");
 	printf("  Log Verbosity Options\n");
-	printf("    -l PATH,     --log_file PATH                  The path to the log file for status messages.\n"
-	       "                                                  [" OVIS_LOGFILE "]\n");
+	printf("    -l PATH,     --log_file PATH                  The path to the log file for status messages.\n");
 	printf("    -v LEVEL,    --log_level LEVEL                The available verbosity levels, in order of decreasing verbosity,\n"
 	       "                                                  are DEBUG, INFO, WARN, ERROR, CRITICAL and QUIET.\n"
 	       "                                                  The default level is ERROR.\n");
@@ -383,7 +381,7 @@ int find_least_busy_thread()
 	struct timespec now;
 	struct ovis_scheduler_thrstats *stat;
 	double best = 100;
-	uint64_t active_pc;
+	double active_pc;
 
 	clock_gettime(CLOCK_REALTIME, &now);
 
@@ -391,7 +389,17 @@ int find_least_busy_thread()
 		stat = ovis_scheduler_thrstats_get(ovis_scheduler[i], &now, 0);
 		if (!stat)
 			continue;
-		active_pc = stat->stats.active_tot / stat->stats.dur_tot;
+		if (0 == stat->stats.dur_tot) {
+			/*
+			 * This could happen when the total duration time is smaller than 1 microsecond
+			 * due to the time difference calculation and unit conversion.
+			 *
+			 * We determine that the thread is not busy as it just started.
+			 */
+			active_pc = 0.0;
+		} else {
+			active_pc = 1.0 * stat->stats.active_tot / stat->stats.dur_tot;
+		}
 		if (active_pc < best || (active_pc == best && ev_count[i] < count)) {
 			idx = i;
 			best = active_pc;

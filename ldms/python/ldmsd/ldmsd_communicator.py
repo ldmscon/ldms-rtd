@@ -77,7 +77,7 @@ LDMSD_CTRL_CMD_MAP = {'usage': {'req_attr': [], 'opt_attr': ['name']},
                                       'opt_attr': ['incr']},
                       'version': {'req_attr': [], 'opt_attr': []},
                       'log_level': {'req_attr': ['level'],
-                                   'opt_attr': ['name', 'regex']},
+                                   'opt_attr': ['name', 'regex', 'test']},
                       'include': {'req_attr': ['path'] },
                       'env': {'req_attr': []},
                       'logrotate': {'req_attr': [], 'opt_attr': []},
@@ -1895,7 +1895,7 @@ class Communicator(object):
             self.close()
             return errno.ENOTCONN, str(e)
 
-    def log_level(self, level, name = None, regex = None):
+    def log_level(self, level, name = None, regex = None, is_test = False):
         """
         Change the verbosity level of ldmsd
 
@@ -1914,8 +1914,12 @@ class Communicator(object):
             attr_list.append(LDMSD_Req_Attr(attr_id = LDMSD_Req_Attr.NAME, value = name))
         if regex is not None:
             attr_list.append(LDMSD_Req_Attr(attr_id = LDMSD_Req_Attr.REGEX, value = regex))
-        req = LDMSD_Request(command_id=LDMSD_Request.VERBOSITY_CHANGE,
-                            attrs = attr_list)
+        if is_test:
+            __test = "true"
+        else:
+            __test = "false"
+        attr_list.append(LDMSD_Req_Attr(attr_id = LDMSD_Req_Attr.TEST, value = __test))
+        req = LDMSD_Request(command_id=LDMSD_Request.VERBOSITY_CHANGE, attrs = attr_list)
         try:
             req.send(self)
             resp = req.receive(self)
@@ -2572,7 +2576,7 @@ class Communicator(object):
         to start the advertiser.
 
         Parameters:
-        - The name to give the advertiser. This name must be unique among all advertisement sent to the aggregator.
+        - The name to give the advertiser
         - The transport type, one of 'sock', 'ugni', 'rdma', or 'fabric'
         - The aggregator's hostname
         - The aggregator's listening port number
@@ -2685,8 +2689,19 @@ class Communicator(object):
 
         Parameters:
          - Name of the producer listen
-         - Regular expression to match sampler hostnames
-         - IP range in the CIDR format
+
+        Keyword Parameters:
+         regex - Regular expression to match sampler hostnames
+         ip - IP range in the CIDR format
+         disable_start - True if prdcr_listen should only create advertised producers.
+                         Otherwise, it will create and automatically start advertised producers
+         quota - Receive quota of advertised producers' connections
+         rx_rate - Receive rate of advertised producers' connections
+         type - Advertised producers' type either 'passive' or 'active'. Default is 'passive'
+         advertiser_xprt -- Transport to connect to the advertiser, only required when type=active
+         advertiser_port -- Advertiser's port to connect to, only required when type=active
+         advertiser_auth -- Authentication domain to be used to connect to advertisers, only used when type=active
+         reconnect -- Advertised producers' reconnect interval, only required when type=active
 
         Return:
         - status is an errno from the errno module
