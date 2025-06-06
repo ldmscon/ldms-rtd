@@ -1,16 +1,14 @@
-**FIX ME**: Add the appropriate syntax to the following target (e.g., ".. _ldmscon-overview:")
-ldmscon-overview
+.. _ldmscon-overview:
 
 LDMSCON2025
 ============
 
-**FIX ME**: Modify the following section below by updating "align", "width" and "height" sections to "center", "300", and "300" respectively.
 
 .. image:: ../images/LDMSCON2025.png
    :alt: OVIS-HPC Logo
-   :align: left
-   :width: 950
-   :height: 75
+   :align: center
+   :width: 300
+   :height: 300
 
 Overview
 --------
@@ -29,9 +27,8 @@ Key Concepts
 - **plugins**: Modular metric collectors that can be configured in ``ldmsd`` (e.g., ``meminfo``).
 - **transports**: Mechanisms for communication, such as `sock`, `rdma`, or `ugni`.
 
-**FIX ME**: make a reference to the example meminfo manpage (e.g. :ref:`description <target>`). This will be configured in a later exercise.   
 
-* Details on how to configure the meminfo sampler can be found at the  meminfo example man page <meminfo-ex>
+* Details on how to configure the meminfo sampler can be found at the  :ref:`meminfo example man page <meminfo-ex>`
 
 Documentation
 ^^^^^^^^^^^^^
@@ -49,9 +46,8 @@ The documentation is organized by project and version, and supports cross-refere
 
 All subproject documentation is integrated and accessible through the main site:
 
-**FIX ME**: Update the following to correctly reference the document of the parent project that was cross-referenced in conf.py (e.g. :doc:`description <parent-project:rst-file>`)
 
-- OVIS-HPC Documentation Site <:>
+- :doc: `OVIS-HPC Documentation Site <ovis-hpc:index>`
 
 
 Useful Links
