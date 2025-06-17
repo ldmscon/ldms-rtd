@@ -1782,7 +1782,7 @@ ldmsd_prdcr_t __prdcr_add_handler(ldmsd_req_ctxt_t reqc, char *verb, char *obj_n
 
 	quota_s = ldmsd_req_attr_str_value_get_by_id(reqc, LDMSD_ATTR_QUOTA);
 	if (quota_s) {
-		quota = atol(quota_s);
+		quota = ovis_get_mem_size(quota_s);
 		if (quota <= -2) {
 			reqc->errcode = EINVAL;
 			cnt = Snprintf(&reqc->line_buf, &reqc->line_len,
@@ -1793,7 +1793,7 @@ ldmsd_prdcr_t __prdcr_add_handler(ldmsd_req_ctxt_t reqc, char *verb, char *obj_n
 
 	rx_rate_s = ldmsd_req_attr_str_value_get_by_id(reqc, LDMSD_ATTR_RX_RATE);
 	if (rx_rate_s) {
-		rx_rate = atol(rx_rate_s);
+		rx_rate = ovis_get_mem_size(rx_rate_s);
 		if (quota <= -2) {
 			reqc->errcode = EINVAL;
 			cnt = Snprintf(&reqc->line_buf, &reqc->line_len,
@@ -2160,7 +2160,14 @@ static int prdcr_subscribe_regex_handler(ldmsd_req_ctxt_t reqc)
 	if (!stream_name && !msg) {
 		reqc->errcode = EINVAL;
 		cnt = Snprintf(&reqc->line_buf, &reqc->line_len,
-				"One of the 'stream' or `msg` attributes is required by prdcr_subscribe_regex (can specify both).");
+				"One of the 'stream' or `msg` attributes is required.");
+		goto send_reply;
+	}
+
+	if (stream_name && msg) {
+		reqc->errcode = EINVAL;
+		cnt = Snprintf(&reqc->line_buf, &reqc->line_len,
+				"Only one of the 'stream' or `msg` attributes can be specified.");
 		goto send_reply;
 	}
 
@@ -2202,10 +2209,18 @@ static int prdcr_unsubscribe_regex_handler(ldmsd_req_ctxt_t reqc)
 
 	stream_name = ldmsd_req_attr_str_value_get_by_id(reqc, LDMSD_ATTR_STREAM);
 	msg = ldmsd_req_attr_str_value_get_by_id(reqc, LDMSD_ATTR_MSG_CHAN);
+
 	if (!stream_name && !msg) {
 		reqc->errcode = EINVAL;
 		cnt = Snprintf(&reqc->line_buf, &reqc->line_len,
-				"One of the 'stream' or `msg` attributes is required by prdcr_unsubscribe_regex (can specify both).");
+				"One of the 'stream' or `msg` attributes is required.");
+		goto send_reply;
+	}
+
+	if (stream_name && msg) {
+		reqc->errcode = EINVAL;
+		cnt = Snprintf(&reqc->line_buf, &reqc->line_len,
+				"Only one of the 'stream' or `msg` attributes can be specified.");
 		goto send_reply;
 	}
 
@@ -2479,6 +2494,7 @@ int __prdcr_status_json_obj(ldmsd_req_ctxt_t reqc, ldmsd_prdcr_t prdcr, int prdc
 	ldmsd_prdcr_set_t prv_set;
 	int set_count = 0;
 	int rc = 0;
+	char quota_s[32], rx_rate_s[32];
 
 	/* Append the string to line_buf */
 	if (prdcr_cnt) {
@@ -2495,12 +2511,18 @@ int __prdcr_status_json_obj(ldmsd_req_ctxt_t reqc, ldmsd_prdcr_t prdcr, int prdc
 			"\"port\":%hu,"
 			"\"transport\":\"%s\","
 			"\"auth\":\"%s\","
+			"\"rail\":\"%d\","
+			"\"quota\":\"%s\","
+			"\"rx_rate\":\"%s\","
 			"\"reconnect_us\":\"%ld\","
 			"\"state\":\"%s\","
 			"\"sets\": [",
 			prdcr->obj.name, ldmsd_prdcr_type2str(prdcr->type),
 			prdcr->host_name, prdcr->port_no, prdcr->xprt_name,
 			prdcr->conn_auth_dom_name,
+			prdcr->rail,
+			((prdcr->quota == -1)?"-1":ovis_format_mem_size(prdcr->quota, quota_s, 32)),
+			((prdcr->rx_rate == -1)?"-1":ovis_format_mem_size(prdcr->rx_rate, rx_rate_s, 32)),
 			prdcr->conn_intrvl_us,
 			prdcr_state_str(prdcr->conn_state));
 	if (rc)
@@ -7128,8 +7150,7 @@ static char *__xprt_stats_as_json(size_t *json_sz, int reset, int level)
 
 			ep_res = &rent->rail.eps_stats[i];
 			if (ep_res->state == LDMS_XPRT_STATS_S_CONNECT) {
-				__APPEND("    %s\"%s:%s\":{", ((!first_ep)?",":""),
-						ep_res->rhostname, ep_res->rport_no);
+				__APPEND("    %s\"ep%d\":{", ((!first_ep)?",":""), i);
 				__APPEND("     \"sq_sz\":%ld", ep_res->ep.sq_sz);
 				__APPEND("  }");
 				first_ep = 0;
@@ -8407,7 +8428,7 @@ static int stream_client_dump_handler(ldmsd_req_ctxt_t reqc)
 		free(reset_s);
 	}
 
-	s = ldmsd_stream_dir_dump();
+	s = ldmsd_stream_client_dump();
 	if (!s) {
 		reqc->errcode = errno;
 		rc = snprintf(reqc->line_buf, reqc->line_len,
@@ -9090,7 +9111,7 @@ enomem:
 static int
 __prdset_upd_time_stats_json_obj(ldmsd_req_ctxt_t reqc, ldmsd_updtr_t updtr,
 				ldmsd_prdcr_t prdcr, ldmsd_name_match_t match,
-				int prd_cnt, int reset)
+				int prd_cnt, int reset, struct timespec *now)
 {
 	int rc;
 	ldmsd_prdcr_set_t prdset;
@@ -9139,7 +9160,7 @@ __prdset_upd_time_stats_json_obj(ldmsd_req_ctxt_t reqc, ldmsd_updtr_t updtr,
 				prdset->skipped_upd_cnt,
 				prdset->oversampled_cnt);
 		if (reset)
-			memset(&prdset->updt_stat, 0, sizeof(prdset->updt_stat));
+			ldmsd_prdcr_set_stats_reset(prdset, now, LDMSD_PRDSET_STATS_F_UPD);
 		pthread_mutex_unlock(&prdset->lock);
 		if (rc)
 			goto end_quote;
@@ -9157,7 +9178,8 @@ unlock:
 extern ldmsd_prdcr_ref_t updtr_prdcr_ref_first(ldmsd_updtr_t updtr);
 extern ldmsd_prdcr_ref_t updtr_prdcr_ref_next(ldmsd_prdcr_ref_t ref);
 static int
-__upd_time_stats_json_obj(ldmsd_req_ctxt_t reqc, ldmsd_updtr_t updtr, int reset)
+__upd_time_stats_json_obj(ldmsd_req_ctxt_t reqc, ldmsd_updtr_t updtr,
+					int reset, struct timespec *now)
 {
 	int rc;
 	ldmsd_name_match_t match;
@@ -9173,7 +9195,7 @@ __upd_time_stats_json_obj(ldmsd_req_ctxt_t reqc, ldmsd_updtr_t updtr, int reset)
 			for (ref = updtr_prdcr_ref_first(updtr); ref;
 					ref = updtr_prdcr_ref_next(ref)) {
 				rc = __prdset_upd_time_stats_json_obj(reqc, updtr,
-						ref->prdcr, match, cnt, reset);
+						ref->prdcr, match, cnt, reset, now);
 				if (rc && rc != ENOTCONN)
 					goto out;
 				else if (!rc)
@@ -9185,7 +9207,7 @@ __upd_time_stats_json_obj(ldmsd_req_ctxt_t reqc, ldmsd_updtr_t updtr, int reset)
 		for (ref = updtr_prdcr_ref_first(updtr); ref;
 				ref = updtr_prdcr_ref_next(ref)) {
 			rc = __prdset_upd_time_stats_json_obj(reqc, updtr,
-						   ref->prdcr, NULL, cnt, reset);
+						   ref->prdcr, NULL, cnt, reset, now);
 			if (rc && rc != ENOTCONN)
 				goto out;
 			else if (!rc)
@@ -9205,7 +9227,9 @@ static int update_time_stats_handler(ldmsd_req_ctxt_t reqc)
 	char *reset_s = NULL;
 	int cnt = 0;
 	int reset = 0;
+	struct timespec now;
 
+	clock_gettime(CLOCK_REALTIME, &now);
 	reset_s = ldmsd_req_attr_str_value_get_by_id(reqc, LDMSD_ATTR_RESET);
 	if (reset_s) {
 		if (0 != strcasecmp(reset_s, "false"))
@@ -9227,9 +9251,9 @@ static int update_time_stats_handler(ldmsd_req_ctxt_t reqc)
 				"updtr '%s' doesn't exist.", name);
 			reqc->errcode = ENOENT;
 			ldmsd_send_req_response(reqc, reqc->line_buf);
-			goto err;
+			goto out;
 		}
-		rc = __upd_time_stats_json_obj(reqc, updtr, reset);
+		rc = __upd_time_stats_json_obj(reqc, updtr, reset, &now);
 	} else {
 		ldmsd_cfg_lock(LDMSD_CFGOBJ_UPDTR);
 		for (updtr = ldmsd_updtr_first(); updtr;
@@ -9241,7 +9265,7 @@ static int update_time_stats_handler(ldmsd_req_ctxt_t reqc)
 					goto err;
 				}
 			}
-			rc = __upd_time_stats_json_obj(reqc, updtr, reset);
+			rc = __upd_time_stats_json_obj(reqc, updtr, reset, &now);
 			if (rc) {
 				ldmsd_cfg_unlock(LDMSD_CFGOBJ_UPDTR);
 				goto err;
@@ -9266,10 +9290,10 @@ out:
 
 static json_entity_t __ldmsd_stat2dict(struct ldmsd_stat *stat)
 {
-	double start_ts = stat->start.tv_sec + stat->start.tv_nsec/1000000.0;
-	double end_ts = stat->end.tv_sec + stat->end.tv_nsec/1000000.0;
-	double min_ts = stat->min_ts.tv_sec + stat->min_ts.tv_nsec/1000000.0;
-	double max_ts = stat->max_ts.tv_sec + stat->max_ts.tv_nsec/1000000.0;
+	double start_ts = stat->start.tv_sec + stat->start.tv_nsec*1e-9;
+	double end_ts = stat->end.tv_sec + stat->end.tv_nsec*1e-9;
+	double min_ts = stat->min_ts.tv_sec + stat->min_ts.tv_nsec*1e-9;
+	double max_ts = stat->max_ts.tv_sec + stat->max_ts.tv_nsec*1e-9;
 	json_entity_t d = json_dict_build(NULL,
 				JSON_FLOAT_VALUE, "min", stat->min,
 				JSON_FLOAT_VALUE, "min_ts", min_ts,
@@ -9956,7 +9980,7 @@ static int prdcr_listen_add_handler(ldmsd_req_ctxt_t reqc)
 			goto err;
 		}
 	} else {
-		pl->quota = 0; /* 0 means inherit quota from the listen xprt */
+		pl->quota = -1;
 	}
 
 	if (rx_rate) {
@@ -9969,7 +9993,7 @@ static int prdcr_listen_add_handler(ldmsd_req_ctxt_t reqc)
 			goto err;
 		}
 	} else {
-		pl->rx_rate = 0; /* 0 means inherit rx_rate from the listen xprt */
+		pl->rx_rate = -1;
 	}
 
 	if (prdcr_type) {
@@ -10426,6 +10450,8 @@ ldmsd_prdcr_t __advertised_prdcr_new(ldmsd_req_ctxt_t reqc, ldmsd_prdcr_listen_t
 	char *adv_hostname;
 	char *advtr_port_s;
 	int adv_port;
+	int rail;
+	uint64_t quota, rx_rate;
 
 	struct ldmsd_sec_ctxt sctxt;
 	char *xprt_s;
@@ -10433,6 +10459,8 @@ ldmsd_prdcr_t __advertised_prdcr_new(ldmsd_req_ctxt_t reqc, ldmsd_prdcr_listen_t
 	ldms_t x;
 
 	ldmsd_prdcr_t prdcr;
+
+	advtr_name = adv_hostname = advtr_port_s = NULL;
 
 	/* Get daemon's UID and GID */
 	ldmsd_sec_ctxt_get(&sctxt);
@@ -10448,6 +10476,10 @@ ldmsd_prdcr_t __advertised_prdcr_new(ldmsd_req_ctxt_t reqc, ldmsd_prdcr_listen_t
 		goto einval;
 
 	advtr_port_s = ldmsd_req_attr_str_value_get_by_id(reqc, LDMSD_ATTR_PORT);
+
+	quota = pl->quota;
+	rx_rate = pl->rx_rate;
+
 	if (pl->prdcr_type == LDMSD_PRDCR_TYPE_ADVERTISED_PASSIVE) {
 		rc = ldms_xprt_addr(x, NULL, &rem_addr);
 		if (rc) {
@@ -10456,17 +10488,26 @@ ldmsd_prdcr_t __advertised_prdcr_new(ldmsd_req_ctxt_t reqc, ldmsd_prdcr_listen_t
 			goto err;
 		}
 		adv_port = rem_addr.sin_port;
+
+		rail = ldms_xprt_rail_eps(reqc->xprt->ldms.ldms);
+
+		if (pl->quota == -1) {
+			/* Inherit the limit from the listener endpoint */
+			quota = ldms_xprt_rail_recv_quota_get(reqc->xprt->ldms.ldms);
+		}
+
+		if (pl->rx_rate == -1) {
+			/* Inherit the limit from the listener endpoint */
+			rx_rate = ldms_xprt_rail_recv_rate_limit_get(reqc->xprt->ldms.ldms);
+		}
 	} else {
-		adv_port = pl->advtr_port;
-
-
-
 		if (!pl->advtr_port) {
 			char *endptr;
 			adv_port = strtol(advtr_port_s, &endptr, 0);
 		} else {
 			adv_port = pl->advtr_port;
 		}
+		rail = pl->rail;
 	}
 
 	errno = 0;
@@ -10474,7 +10515,7 @@ ldmsd_prdcr_t __advertised_prdcr_new(ldmsd_req_ctxt_t reqc, ldmsd_prdcr_listen_t
 			xprt_s, adv_hostname, adv_port,
 			pl->prdcr_type, pl->reconnect, pl->auth,
 			sctxt.crd.uid, sctxt.crd.gid, 0700,
-			pl->rail, pl->quota, pl->rx_rate, 1);
+			rail, quota, rx_rate, 1);
 	if (!prdcr) {
 		rc = errno;
 		ovis_log(NULL, OVIS_LERROR, "Error %d: Failed to create an " \
@@ -10493,6 +10534,10 @@ ldmsd_prdcr_t __advertised_prdcr_new(ldmsd_req_ctxt_t reqc, ldmsd_prdcr_listen_t
 		}
 	}
 	ldms_xprt_put(x, "advertised_prdcr"); /* Put back the reference at the beginning of the funciton */
+out:
+	free(advtr_name);
+	free(adv_hostname);
+	free(advtr_port_s);
 	return prdcr;
 
 einval:
@@ -10507,13 +10552,15 @@ einval:
 	reqc->line_off = snprintf(reqc->line_buf, reqc->line_len,
 				"Invalid advertisement message");
 	reqc->errcode = errno = EINVAL;
-	return NULL;
+	prdcr = NULL;
+	goto out;
 err:
 	reqc->line_off = snprintf(reqc->line_buf, reqc->line_len,
 				"ldmsd failed to create producers.");
 	reqc->errcode = EINTR;
 	errno = rc;
-	return NULL;
+	prdcr = NULL;
+	goto out;
 }
 
 /* The implementation is in ldmsd_updtr.c */
@@ -10688,6 +10735,29 @@ static int __process_advertisement(ldmsd_req_ctxt_t reqc, ldmsd_prdcr_listen_t p
 		}
 	}
 	ldmsd_cfg_unlock(LDMSD_CFGOBJ_UPDTR);
+
+	/*
+	 * Make sure that advertised producers subscribe and unsubscribe stream and msg_channel correctly
+	 */
+	struct ldmsd_prdcr_sub_unsub *psun;
+	ldmsd_prdcr_sub_unsub_list_lock();
+	for (psun = ldmsd_prdcr_sub_unsub_list_first(); psun; psun = ldmsd_prdcr_sub_unsub_list_next(psun)) {
+		rc = regexec(&psun->regex, prdcr->obj.name, 0, NULL, 0);
+		if (rc)
+			continue;
+		if (psun->is_sub) {
+			if (psun->stream_name)
+				ldmsd_prdcr_stream_subscribe(prdcr, psun->stream_name);
+			else /* msg_channel */
+				ldmsd_prdcr_msg_subscribe(prdcr, psun->msg, psun->rate);
+		} else {
+			if (psun->stream_name)
+				ldmsd_prdcr_stream_unsubscribe(prdcr, psun->stream_name);
+			else /* msg_channel */
+				ldmsd_prdcr_msg_unsubscribe(prdcr, psun->msg);
+		}
+	}
+	ldmsd_prdcr_sub_unsub_list_unlock();
 
 	if (pl->auto_start && is_new_prdcr) {
 		if (prdcr->type == LDMSD_PRDCR_TYPE_ADVERTISED_PASSIVE) {

@@ -213,7 +213,6 @@ struct rabbitv3_metric_store {
 
 /* group of metric support data.  */
 struct rabbitv3_store_instance {
-	struct ldmsd_store *store;
 	char *container;
 	char *schema;
 	char *key; /* container schema */
@@ -371,8 +370,8 @@ static int config(ldmsd_plug_handle_t handle, struct attr_value_list *kwl, struc
 			return EINVAL;
 		}
 	}
-	ovis_log(mylog, OVIS_LINFO,"rabbitv3: config host=%s port=%d vhost=%s user=%s metainterval=%d\n",
-	       value, amqp_port, vhvalue, user, g_metainterval);
+	ovis_log(mylog, OVIS_LINFO,"rabbitv3: config host=%s port=%d vhost=%s user=%s metainterval=%ld\n",
+                 value, amqp_port, vhvalue, user, (long)g_metainterval);
 
 #ifdef USEFILTER
 	char *fvalue;
@@ -894,7 +893,7 @@ update_metrics(struct rabbitv3_store_instance *si, ldms_set_t set,
 {
 	if (si->metric_count) {
 		ovis_log(mylog, OVIS_LINFO,"rabbitv3: unexpected "
-		       "reconfigure to size %d from %d.\n",
+		       "reconfigure to size %zd from %d.\n",
 		       metric_count,si->metric_count);
 	}
 	struct rabbitv3_metric_store *ms;
@@ -997,7 +996,6 @@ open_store(ldmsd_plug_handle_t handle, const char *container, const char *schema
 			ovis_log(mylog, OVIS_LERROR,"rabbitv3: oom meta_idx\n");
 			goto err2;
 		}
-		si->store = s;
 		si->container = strdup(container);
 		if (!si->container) {
 			ovis_log(mylog, OVIS_LERROR,"rabbitv3: oom container\n");

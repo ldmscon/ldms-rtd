@@ -15,11 +15,6 @@ AUTH_ATTRS = [
     'conf'
 ]
 
-BYTE_ATTRS = [
-    'rx_rate',
-    'quota'
-]
-
 CORE_ATTRS = [
     'daemons',
     'aggregators',
@@ -110,15 +105,12 @@ def check_opt(attr, spec):
             attr = 'name'
         if 'auth' in spec:
             spec = spec['auth']
+        else:
+            return None
     if attr in spec:
         if attr in INT_ATTRS:
-            return check_intrvl_str(spec[attr])
-        if attr in BYTE_ATTRS:
-            try:
-                if spec[attr] is not None:
-                    return int(spec[attr])
-            except:
-                raise ValueError(f'Error: "{spec[attr]}" is not a valid integer')
+            if spec[attr] is not None:
+                return check_intrvl_str(spec[attr])
         return spec[attr]
     else:
         if attr in DEFAULT_ATTR_VAL:
@@ -416,7 +408,8 @@ class YamlCfg(object):
             reconnect = check_opt('reconnect', pl)
             adv_xprt = check_opt('advertiser_xprt', pl)
             adv_port = check_opt('advertiser_port', pl)
-            adv_auth = check_opt('advertiser_auth', pl)
+            # adv_auth = check_opt('advertiser_auth', pl)
+            auth_name, plugin, auth_opt = check_auth(pl)
             node_listen[pl['name']] = { 'reconnect'     : reconnect,
                                         'disable_start' : dstart,
                                         'ip'            : ip,
@@ -427,7 +420,7 @@ class YamlCfg(object):
                                         'type'          : prdcr_type,
                                         'advertiser_xprt': adv_xprt,
                                         'advertiser_port': adv_port,
-                                        'advertiser_auth': adv_auth
+                                        'advertiser_auth': auth_name
             }
             self.prdcr_listeners[spec['daemons']] = node_listen
 
@@ -811,7 +804,7 @@ class YamlCfg(object):
             adv_xprt = check_opt('advertiser_xprt', plisten[pl])
             adv_port = check_opt('advertiser_port', plisten[pl])
             adv_auth = check_opt('advertiser_auth', plisten[pl])
-            rails = check_opt('rails', plisten[pl])
+            rail = check_opt('rail', plisten[pl])
             reconnect = check_opt('reconnect', plisten[pl])
 
             dstr = self.write_opt_attr(dstr, 'disable_start', dstart)
@@ -823,7 +816,7 @@ class YamlCfg(object):
             dstr = self.write_opt_attr(dstr, 'advertiser_xprt', adv_xprt)
             dstr = self.write_opt_attr(dstr, 'advertiser_port', adv_port)
             dstr = self.write_opt_attr(dstr, 'advertiser_auth', adv_auth)
-            dstr = self.write_opt_attr(dstr, 'rails', rails)
+            dstr = self.write_opt_attr(dstr, 'rail', rail)
             dstr = self.write_opt_attr(dstr, 'reconnect', reconnect, endline=True)
             dstr += f'prdcr_listen_start name={pl}\n'
         return dstr
@@ -1000,6 +993,7 @@ class YamlCfg(object):
                     dstr, auth_list = self.write_listeners(dstr, group_name, dmn, auth_list)
                     dstr, auth_list = self.write_producers(dstr, group_name, dmn, auth_list)
                     dstr = self.write_prdcr_listeners(dstr, group_name)
+                    dstr, auth_list = self.write_advertisers(dstr, group_name, dmn, auth_list)
                     dstr = self.write_stream_subscribe(dstr, group_name, dmn)
                     dstr = self.write_agg_plugins(dstr, group_name, dmn)
                     dstr = self.write_updaters(dstr, group_name, dmn)

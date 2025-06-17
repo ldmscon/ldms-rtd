@@ -121,7 +121,7 @@ static size_t realloc_msg_buf(amqp_inst_t ai, size_t buf_len)
 	if (ai->msg_buf)
 		return ai->msg_buf_len;
 	else
-		LERR("OOM error allocating %d bytes for message buffer.\n", buf_len);
+		LERR("OOM error allocating %zd bytes for message buffer.\n", buf_len);
 	return 0;
 }
 
@@ -147,7 +147,7 @@ static int setup_certs(amqp_inst_t ai, const char *cacert, struct attr_value_lis
 		}
 		rc = amqp_ssl_socket_set_key(ai->socket, cert, key);
 		if (rc) {
-			LERR("Error %d setting key and cert files.\n");
+			LERR("Error %d setting key and cert files.\n", rc);
 			goto out;
 		}
 	}
@@ -461,7 +461,7 @@ open_store(ldmsd_plug_handle_t s, const char *container, const char *schema,
 }
 
 static int
-store(ldmsd_store_handle_t _sh, ldms_set_t set,
+store(ldmsd_plug_handle_t handle, ldmsd_store_handle_t _sh, ldms_set_t set,
       int *metric_arry, size_t metric_count)
 {
 	amqp_basic_properties_t props;
@@ -507,7 +507,7 @@ static void _close_store(amqp_inst_t ai)
 	free(ai->pwd);
 }
 
-static void close_store(ldmsd_store_handle_t _sh)
+static void close_store(ldmsd_plug_handle_t handle, ldmsd_store_handle_t _sh)
 {
 	struct amqp_instance *ai = _sh;
 	if (!ai)

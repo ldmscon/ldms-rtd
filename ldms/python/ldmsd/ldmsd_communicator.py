@@ -281,7 +281,7 @@ def fmt_status(msg):
         try:
             msg = json.loads(msg)
         except Exception as e:
-            print(f'Error converting {msg} to json object')
+            print(f"The server replied: '{msg}'")
             msg = None
     else:
         msg = None
@@ -2234,9 +2234,9 @@ class Communicator(object):
         if 'rail' in kwargs.keys() and kwargs['rail']:
             attrs.append(LDMSD_Req_Attr(attr_id=LDMSD_Req_Attr.RAIL, value=str(int(kwargs['rail']))))
         if 'quota' in kwargs.keys() and kwargs['quota']:
-            attrs.append(LDMSD_Req_Attr(attr_id=LDMSD_Req_Attr.QUOTA, value=str(int(kwargs['quota']))))
+            attrs.append(LDMSD_Req_Attr(attr_id=LDMSD_Req_Attr.QUOTA, value=str(kwargs['quota'])))
         if 'rx_rate' in kwargs.keys() and kwargs['rx_rate']:
-            attrs.append(LDMSD_Req_Attr(attr_id=LDMSD_Req_Attr.RX_RATE, value=str(int(kwargs['rx_rate']))))
+            attrs.append(LDMSD_Req_Attr(attr_id=LDMSD_Req_Attr.RX_RATE, value=str(kwargs['rx_rate'])))
         if 'cache_ip' in kwargs.keys() and kwargs['cache_ip']:
             attrs.append(LDMSD_Req_Attr(attr_id = LDMSD_Req_Attr.IP, value = str(kwargs['cache_ip'])))
 
@@ -2418,13 +2418,14 @@ class Communicator(object):
         - status is an errno from the errno module
         - data is an error message if status != 0 or None
         """
-        req = LDMSD_Request(command_id = LDMSD_Request.PRDCR_SUBSCRIBE,
-                attrs = [
-                    LDMSD_Req_Attr(attr_id=LDMSD_Req_Attr.REGEX, value=regex),
-                    LDMSD_Req_Attr(attr_id=LDMSD_Req_Attr.STREAM, value=stream),
-                    LDMSD_Req_Attr(attr_id=LDMSD_Req_Attr.MSG_CHAN, value=msg_chan),
-                    LDMSD_Req_Attr(attr_id=LDMSD_Req_Attr.RX_RATE, value=str(int(rx_rate)))
-                ])
+        attrs = [ LDMSD_Req_Attr(attr_id=LDMSD_Req_Attr.REGEX, value=regex) ]
+        if stream is not None:
+            attrs.append(LDMSD_Req_Attr(attr_id=LDMSD_Req_Attr.STREAM, value=stream))
+        if msg_chan is not None:
+            attrs.append(LDMSD_Req_Attr(attr_id=LDMSD_Req_Attr.MSG_CHAN, value=msg_chan))
+        if rx_rate is not None:
+            attrs.append(LDMSD_Req_Attr(attr_id=LDMSD_Req_Attr.RX_RATE, value=str(int(rx_rate))))
+        req = LDMSD_Request(command_id = LDMSD_Request.PRDCR_SUBSCRIBE, attrs = attrs)
         try:
             req.send(self)
             resp = req.receive(self)
