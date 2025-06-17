@@ -4,7 +4,7 @@ LDMSCON2025
 ===========
 
 .. image:: ../images/LDMSCON2025.png
-   :alt: OVIS-HPC Logo
+   :alt: LDMSCON2025 Logo
    :align: center
    :width: 300
    :height: 300

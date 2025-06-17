@@ -12,7 +12,7 @@ meminfo-ex
 Example man page for the LDMS meminfo plugin
 
 
-**FIX ME**: Add the date (todays date), section (7) and group (LDMS sampler) with appropriate syntax (e.g. :Date: day month year, :Manual section:, :Manual group:).
+**FIX ME**: Add the date (todays date), section (7) and group (LDMS sampler) with appropriate formatting (e.g. :Date: day month year, :Manual section:, :Manual group:).
 :
 :
 :
@@ -63,7 +63,7 @@ EXAMPLES
 
 Within ldmsd_controller or a configuration file:
 
-**FIX ME**: Format the following as a code block using either :: or .. code-block::. Ensure there is a blank line after the directive, and indent the code properly.
+**FIX ME**: Format the following as a code block using either :: OR .. code-block::. Ensure there is a blank line after the directive, and indent the code properly.
 
 load name=meminfo
 config name=meminfo producer=vm1_1 instance=vm1_1/meminfo
@@ -72,6 +72,6 @@ start name=meminfo interval=1000000
 SEE ALSO
 ========
 
-**FIX ME**: Fix the syntax of the following 4 references (:ref:`name <name>`)
+**FIX ME**: Create a reference to ldmsd(8) (:ref:`name <name>`)
 
-ref`ldmsd(8) ldmsd`, :ref:ldms_quickstart(7) <ldms_quickstart>, `ldmsd_controller(8) <ldmsd_controller>`, :ref:`ldms_sampler_base(7) ldms_sampler_base`
+ldmsd(8), :ref:`ldms_quickstart(7) <ldms_quickstart>`, :ref:`ldmsd_controller(8) <ldmsd_controller>`, :ref:`ldms_sampler_base(7) <ldms_sampler_base>`
