@@ -1669,10 +1669,10 @@ class LdmsdCmdParser(cmd.Cmd):
             print(f"Error {rc}: {msg}")
             return
         plugins = fmt_status(msg)
-        print("Config Name  Plugin                   Type         libpath")
-        print("------------ ------------------------ ------------ ------------")
+        print("Config Name              Plugin Name              Type         libpath")
+        print("------------------------ ------------------------ ------------ ------------")
         for plugn in plugins:
-            print("{0:12} {1:24} {2:12} {3}".format(
+            print("{0:24} {1:24} {2:12} {3}".format(
                 plugn['name'], plugn['plugin'], plugn['type'],
                 plugn['libpath']))
 
@@ -1872,7 +1872,7 @@ class LdmsdCmdParser(cmd.Cmd):
 
     def __log_level(self, arg):
         arg = self.handle_args('log_level', arg)
-        if arg:
+        if not arg:
             return
         rc, msg = self.comm.log_level(arg['level'], arg['name'], arg['regex'], arg['test'])
         if rc:

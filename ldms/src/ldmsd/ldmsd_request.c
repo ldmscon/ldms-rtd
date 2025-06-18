@@ -792,6 +792,7 @@ int is_req_id_priority(enum ldmsd_request req_id)
 	case LDMSD_PID_FILE_REQ:
 	case LDMSD_BANNER_MODE_REQ:
 	case LDMSD_STREAM_DISABLE_REQ:
+	case LDMSD_MSG_DISABLE_REQ:
 		return 1;
 	default:
 		return 0;
@@ -5263,12 +5264,13 @@ int __plugn_status_json_obj(ldmsd_req_ctxt_t reqc)
 		}
 		count++;
 		rc = linebuf_printf(reqc,
-			       "{\"name\":\"%s\",\"plugin\":\"%s\",\"type\":\"%s\","
-			       "\"libpath\":\"%s\"}",
-			       samp->cfg.name,
-			       samp->plugin->name,
-			       plugin_type_str(samp->api->base.type),
-			       samp->plugin->libpath);
+			"{\"name\":\"%s\",\"plugin\":\"%s\",\"type\":\"%s[%s]\","
+			"\"libpath\":\"%s\"}",
+			samp->cfg.name,
+			samp->plugin->name,
+			plugin_type_str(samp->api->base.type),
+			samp->api->base.flags & LDMSD_PLUGIN_MULTI_INSTANCE ? "M" : "S",
+			samp->plugin->libpath);
 		if (rc) {
 			ldmsd_cfg_unlock(LDMSD_CFGOBJ_SAMPLER);
 			goto err;
@@ -5286,12 +5288,13 @@ int __plugn_status_json_obj(ldmsd_req_ctxt_t reqc)
 		}
 		count++;
 		rc = linebuf_printf(reqc,
-				    "{\"name\":\"%s\",\"plugin\":\"%s\",\"type\":\"%s\","
-				    "\"libpath\":\"%s\"}",
-				    store->cfg.name,
-				    store->plugin->name,
-				    plugin_type_str(store->api->base.type),
-				    store->plugin->libpath);
+				"{\"name\":\"%s\",\"plugin\":\"%s\",\"type\":\"%s[%s]\","
+				"\"libpath\":\"%s\"}",
+				store->cfg.name,
+				store->plugin->name,
+				plugin_type_str(store->api->base.type),
+				store->api->base.flags & LDMSD_PLUGIN_MULTI_INSTANCE ? "M" : "S",
+				store->plugin->libpath);
 		if (rc) {
 			ldmsd_cfg_unlock(LDMSD_CFGOBJ_STORE);
 			goto err;
@@ -5589,13 +5592,8 @@ static int __plugn_usage_string(ldmsd_req_ctxt_t reqc)
 		count++;
 	}
 	ldmsd_cfg_unlock(LDMSD_CFGOBJ_SAMPLER);
-	if (name && (0 == count)) {
-		reqc->line_off = snprintf(reqc->line_buf, reqc->line_len,
-				"Plugin '%s' not loaded.", name);
-		reqc->errcode = ENOENT;
-	}
 	ldmsd_cfg_lock(LDMSD_CFGOBJ_STORE);
-	for (store = ldmsd_store_first(); samp;
+	for (store = ldmsd_store_first(); store;
 			store = ldmsd_store_next(store)) {
 		if (name && (0 != strcmp(name, store->cfg.name)))
 			continue;
@@ -5976,6 +5974,7 @@ static int verbosity_change_handler(ldmsd_req_ctxt_t reqc)
 	char *level_s = NULL;
 	char *subsys = NULL;
 	char *regex_s = NULL;
+	char *test_s = NULL;
 	size_t cnt = 0;
 	int is_test = 0;
 	int level;
@@ -5990,6 +5989,7 @@ static int verbosity_change_handler(ldmsd_req_ctxt_t reqc)
 	}
 	subsys = ldmsd_req_attr_str_value_get_by_id(reqc, LDMSD_ATTR_NAME);
 	regex_s = ldmsd_req_attr_str_value_get_by_id(reqc, LDMSD_ATTR_REGEX);
+	test_s = ldmsd_req_attr_str_value_get_by_id(reqc, LDMSD_ATTR_TEST);
 
 	if (0 == strcasecmp(level_s, "default") || (0 == strcasecmp(level_s, "reset"))) {
 		level = OVIS_LDEFAULT;
@@ -6028,16 +6028,14 @@ static int verbosity_change_handler(ldmsd_req_ctxt_t reqc)
 	if (rc)
 		goto out;
 
-	if (ldmsd_req_attr_keyword_exist_by_id(reqc->req_buf, LDMSD_ATTR_TEST))
-		is_test = 1;
-
 	__dlog(DLOG_CFGOK, "log_level level=%s%s%s%s%s%s\n", level_s,
 		is_test ? " test" : "",
 		subsys ? " name=" : "",
 		subsys ? subsys : NULL,
 		regex_s ? " regex=" : "",
 		regex_s ? regex_s : "");
-	if (is_test) {
+
+	if (test_s && (0 == strcasecmp(test_s, "true"))) {
 		ovis_log(config_log, OVIS_LDEBUG, "TEST DEBUG\n");
 		ovis_log(config_log, OVIS_LINFO, "TEST INFO\n");
 		ovis_log(config_log, OVIS_LWARNING, "TEST WARNING\n");
@@ -6051,6 +6049,7 @@ out:
 	free(level_s);
 	free(subsys);
 	free(regex_s);
+	free(test_s);
 	return 0;
 }
 
