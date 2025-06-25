@@ -1,16 +1,13 @@
-**FIX ME**: Add the appropriate syntax to the following target (e.g., ".. _ldmscon-overview:")
-ldmscon-overview
+.. ldmscon-overview:
 
 LDMSCON2025
 ============
 
-**FIX ME**: Modify the following section below by updating "align", "width" and "height" sections to "center", "300", and "300" respectively.
-
 .. image:: ../images/LDMSCON2025.png
    :alt: LDMSCON2025 Logo
-   :align: left
-   :width: 950
-   :height: 75
+   :align: center
+   :width: 300
+   :height: 300
 
 Overview
 --------
@@ -49,7 +46,7 @@ All subproject documentation is integrated and accessible through the main site:
 
 **FIX ME**: Utilize Sphinx's `intersphinx_mapping`, defined in conf.py, to reference the parent project homepage (e.g. :doc:`description <parent-project:rst-file>`)
 
-- OVIS-HPC Documentation Site <:>
+- :doc`OVIS-HPC Documentation Site <ovis-hpc:index>`
 
 
 Useful Links
